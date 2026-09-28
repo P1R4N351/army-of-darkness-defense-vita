@@ -1,0 +1,124 @@
+{
+ "pillow": "10.2.0",
+ "outputs": [
+  {
+   "file": "icon0.png",
+   "source": "05.png",
+   "size": [
+    128,
+    128
+   ],
+   "scale": 0.102073,
+   "image_box_xywh": [
+    0,
+    0,
+    128,
+    128
+   ],
+   "letterbox": "transparent",
+   "exact_transparency_remapped_px": 0,
+   "sha256": "ad308a610dd09899c3feb6c45d9232b2847a5f11e2ddd96a599154191d14ea02"
+  },
+  {
+   "file": "pic0.png",
+   "source": "02.png",
+   "size": [
+    960,
+    544
+   ],
+   "method": "uniform scale, proportional margin crop, plain purple side fill only if the margins run out",
+   "sha256": "16ab90e3bf91e0d521179aed5eb77e293fbb9bda1c5a7a43888f92d9ccb6b992",
+   "scale": 0.723404,
+   "crop_box_src": [
+    0.0,
+    33.0,
+    1280.0,
+    785.0
+   ],
+   "cropped_rows_src": 48,
+   "content_rows_src": [
+    39,
+    778
+   ],
+   "margin_above_title_src": 6.0,
+   "image_box_xywh": [
+    17,
+    0,
+    926,
+    544
+   ],
+   "side_fill_px": [
+    17,
+    17
+   ],
+   "side_fill_rgb": [
+    45,
+    23,
+    68
+   ],
+   "margin_below_logo_src": 6.0
+  },
+  {
+   "file": "bg0.png",
+   "source": "02.png",
+   "size": [
+    840,
+    500
+   ],
+   "method": "uniform scale, proportional margin crop, plain purple side fill only if the margins run out",
+   "sha256": "53c1a8374197ff2e37b167425055f25316f58b0bbdbeef0661c76dae20b7d9f0",
+   "scale": 0.65625,
+   "crop_box_src": [
+    0.0,
+    26.19,
+    1280.0,
+    788.1
+   ],
+   "cropped_rows_src": 38.1,
+   "content_rows_src": [
+    39,
+    778
+   ],
+   "margin_above_title_src": 12.81,
+   "image_box_xywh": [
+    0,
+    0,
+    840,
+    500
+   ],
+   "side_fill_px": [
+    0,
+    0
+   ],
+   "side_fill_rgb": null,
+   "margin_below_logo_src": 9.1
+  },
+  {
+   "file": "startup.png",
+   "source": "06-startup-logo.png",
+   "size": [
+    280,
+    158
+   ],
+   "method": "fit, alpha-composited on opaque purple",
+   "scale": 0.469012,
+   "image_box_xywh": [
+    0,
+    11,
+    280,
+    135
+   ],
+   "fill_rgb": [
+    45,
+    23,
+    68
+   ],
+   "sha256": "cf4029466a03a50102d418b40ea3dbf00c59049a683add0976df35e4c4d53fca"
+  }
+ ],
+ "startup_fill_rgb": [
+  45,
+  23,
+  68
+ ]
+}
