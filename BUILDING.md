@@ -1,3 +1,13 @@
+# Release 1.1 build provenance
+
+The 1.1 native executable is byte-identical to the reviewed trophy source candidate
+`077e73958e83f9d9b6e13840968d3c3ce6338ff1`, built with the same pinned softfp toolchain and dependencies
+listed below. Its SHA256 is `c9934e676865987957660950591e2d98f8f3b7ee13209b1fa5caa983b5933f4f`.
+The 1.1 VPK updates only package APP_VER to 01.10; application/communication IDs remain AODD00001.
+The corresponding sources and unchanged dependency sources accompany the release as
+`aod-vita-1.1-source.tar.gz` and `aod-vita-1.1-dependency-sources.tar.gz`.
+No native unlock or device behavior is verified. See `docs/TROPHIES.md` and README.
+
 # Building Army of Darkness Defense for PS Vita
 
 The 1.0 release `eboot.bin` (sha256 `dcc82f4503916d04a951d690a29f856dbed603ccb92c1daf1df979ec9a89a116`) was

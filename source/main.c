@@ -14,6 +14,7 @@
 #include "utils/dialog.h"
 
 #include "aod/jni_bridge.h"
+#include "aod/trophies.h"
 #include "aod/port.h"
 #include "aod/touch_ids.h"
 #include "aod/uniform_remap.h"
@@ -143,6 +144,7 @@ int main(void) {
 	jclass app = (*(&jni))->FindClass(&jni, "com/backflipstudios/bf_core/jni/Application");
 
 	gl_init();
+	aod_trophies_init(); /* optional setup before any game lifecycle */
 	aod_jni_set_surface(SCREEN_W, SCREEN_H);
 	if (aod_gldiag_enabled())
 		gldiag_preflight(AOD_DIAG_PREFLIGHT_P1);   /* opt-in DIAGNOSTIC E9: GL clear before any game code */
@@ -200,6 +202,7 @@ int main(void) {
 
 	l_info("lifecycle: exit requested");
 	aod_jni_log_stats();
+	aod_trophies_stop();
 	sceKernelExitProcess(0);
 	return 0;
 }

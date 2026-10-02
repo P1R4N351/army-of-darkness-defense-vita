@@ -14,8 +14,8 @@ include("${VITASDK}/share/vita.cmake" REQUIRED)
 set(VITA_APP_NAME "Army of Darkness Defense")
 set(VITA_TITLEID "AODD00001")
 set(VITA_VPKNAME "aod_vita")
-set(VITA_VERSION "01.00")
-set(VITA_MKSFOEX_FLAGS "-d ATTRIBUTE2=12")
+set(VITA_VERSION "01.10")
+set(VITA_MKSFOEX_FLAGS "-d ATTRIBUTE2=12 -s NP_COMMUNICATION_ID=AODD00001")
 
 # Optional: used for "send" and "dump" targets
 set(PSVITAIP "192.168.0.198" CACHE STRING "PSVita IP (for FTP access)")
@@ -105,6 +105,9 @@ set(SOURCES
     source/main.c
     source/dynlib.c
     source/java.c
+    source/aod/trophies.c
+    source/aod/trophy_storage.c
+    source/aod/trophies_vita.c
     source/aod/hash.c
     source/aod/jni_bridge.c
     source/aod/port_vita.c
@@ -153,6 +156,7 @@ list(APPEND SOURCES
   source/reimpl/controls.h)
 endif()
 
+set_source_files_properties(source/aod/trophies.c PROPERTIES COMPILE_OPTIONS "-fno-fast-math")
 add_executable(${CMAKE_PROJECT_NAME} ${SOURCES})
 
 add_subdirectory(lib/libc_bridge)
@@ -260,6 +264,8 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
                       SceShaccCg_stub
                       z
                       m
+                      SceNpTrophy_stub
+                      SceSysmodule_stub
                       ScePgf_stub
                       mathneon
                       kubridge_stub
@@ -283,10 +289,20 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
                       )
 
 vita_create_self(eboot.bin ${CMAKE_PROJECT_NAME} UNSAFE NOASLR)
+# Clean original metadata/art; generated locally, not publisher assets.
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(AOD_TROPHY_PACK "${CMAKE_BINARY_DIR}/trophy/AODD00001_00/TROPHY.TRP")
+add_custom_command(OUTPUT ${AOD_TROPHY_PACK}
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/release/trophies/build_pack.py --out ${AOD_TROPHY_PACK}
+    DEPENDS release/trophies/build_pack.py release/trophies/mapping.json release/trophies/metadata.json
+    VERBATIM)
+add_custom_target(aod_trophy_pack DEPENDS ${AOD_TROPHY_PACK})
+add_dependencies(${CMAKE_PROJECT_NAME} aod_trophy_pack)
 vita_create_vpk(${VITA_VPKNAME}.vpk ${VITA_TITLEID} eboot.bin
                 VERSION ${VITA_VERSION}
                 NAME ${VITA_APP_NAME}
-                FILE ${CMAKE_SOURCE_DIR}/extras/cpuinfo cpuinfo
+                FILE ${AOD_TROPHY_PACK} sce_sys/trophy/AODD00001_00/TROPHY.TRP
+                ${CMAKE_SOURCE_DIR}/extras/cpuinfo cpuinfo
                 ${CMAKE_SOURCE_DIR}/extras/meminfo meminfo
                 ${CMAKE_SOURCE_DIR}/extras/urandom urandom
                 ${CMAKE_SOURCE_DIR}/extras/livearea/icon0.png sce_sys/icon0.png

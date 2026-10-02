@@ -1,4 +1,4 @@
-# Army of Darkness Defense for PS Vita (unofficial port) 1.0
+# Army of Darkness Defense for PS Vita (unofficial port) 1.1 — experimental homebrew trophies
 
 A port of the Android game *Army of Darkness Defense* **1.1.1** to the PlayStation Vita, by **PiSCES**.
 It is a so-loader port: the game's own ARMv7 code from the Android APK (`libgame.so`, `libfmodex.so`) runs
@@ -32,7 +32,7 @@ On a PC (Windows, macOS or Linux):
 
 ## 1. Prepare the data folder (on the PC)
 
-Unzip `aodd-prepare-kit-1.0.zip`, then run:
+Unzip `aodd-prepare-kit-1.1.zip`, then run:
 
     python3 prepare_data.py path/to/your.apk out
 
@@ -72,7 +72,7 @@ which exist on the Vita. The profile edits only the game's Lua scripts and confi
 libraries (`libgame.so`, `libfmodex.so`) are not modified:
 - ads, video ads, analytics, crash reporting and install tracking are removed, together with their
   service configurations, keys and identifiers;
-- the leaderboard, achievement, "more games", rating, privacy and legal web buttons are removed;
+- the leaderboard, "more games", rating, privacy and legal web buttons are removed;
 - the publisher server address is replaced with an address that never resolves;
 - **the coin store works offline**: each gold pack shows `FREE` and adds the original gold amount
   locally. Nothing is bought, nothing is charged and no network is used. "Restore Purchases" is removed.
@@ -100,7 +100,30 @@ key from *your* copy at run time to re-sign the files it edits; the key is not i
   check of it is separate from this README. A complete campaign, suspend/resume, PS TV and long sessions have not been
   tested systematically, and no performance measurements have been made; some slowdown can occur.
 - Only version 1.1.1 is supported.
-- Online features (leaderboards, achievements, cloud services) do not exist in this port.
+- Online leaderboards, Game Center and cloud services do not exist in this port. Optional local homebrew trophies are described below.
+
+## Experimental homebrew trophies (1.1)
+
+**Native trophy unlocks, NoTrpDrm registration and actual device behavior are untested and unverified.**
+This update is released experimentally without further gameplay testing. The earlier 1.0 testing above
+covers the base port only; it does not establish that trophies work. Host queue/storage tests and an
+isolated Vita build passed, but there is no verified earned native unlock or trophy popup.
+
+The add-on preserves all 52 original achievement keys and conditions, with stable IDs 0–51 and
+communication ID `AODD00001`. Completed events go to a local durable queue and optional `sceNpTrophy`
+backend. It does not enable Game Center, PlayStation Network or any removed online service, and does
+not automatically award unearned trophies. There is no bulk award for past progress.
+
+**Upgrade both the VPK and prepared data.** Re-run `aodd-prepare-kit-1.1.zip` on your own supported APK,
+then copy the prepared game data while preserving `ux0:data/aodd/files/` and your existing saves.
+The 1.0 preparation kit does not contain the earned-event bridge required by this release.
+For optional NoTrpDrm setup, use its own official instructions linked in `docs/TROPHIES.md`; this release
+installs no plugins or device configuration. Missing-service fallback is designed to queue earned events,
+but that native behavior is also unverified. An empty `ux0:data/aodd/no-trophies` file disables registration
+and the local journal. Back up `files/` before installing this experimental update.
+
+Rear touch pad and additional button support remain planned; controls are unchanged in this release.
+See `docs/TROPHIES.md` for the journal, identity and validation limits.
 
 ## Building from source
 
@@ -109,8 +132,8 @@ See `BUILDING.md`. It needs the **softfp** VitaSDK (`nightly-softfp`).
 ## Contact and links
 
 - Author: PiSCES, piranesi.ai@outlook.com.
-- Source repository (planned, not yet published): https://github.com/P1R4N351/army-of-darkness-defense-vita
-- Release page (planned): https://github.com/P1R4N351/army-of-darkness-defense-vita/releases/tag/v1.0.0
+- Source repository: https://github.com/P1R4N351/army-of-darkness-defense-vita
+- Release page: https://github.com/P1R4N351/army-of-darkness-defense-vita/releases/tag/v1.1.0
 
 ## Credits and licenses
 
@@ -122,8 +145,8 @@ See `BUILDING.md`. It needs the **softfp** VitaSDK (`nightly-softfp`).
 - The port's own source code is under the MIT License (`LICENSE.txt`). `eboot.bin` statically links
   libraries under their own licenses, one of them GPL-3.0 (SceShaccCgExt), so `eboot.bin` as a whole is
   distributed under the GPL-3.0. Notices and license texts are in `THIRD_PARTY_NOTICES.md` and `LICENSES/`.
-  The complete corresponding source is `aod-vita-1.0-source.tar.gz` (the port) and
-  `aod-vita-1.0-dependency-sources.tar.gz` (the linked VitaSDK libraries, with their build recipes).
+  The complete corresponding source is `aod-vita-1.1-source.tar.gz` (the port) and
+  `aod-vita-1.1-dependency-sources.tar.gz` (the linked VitaSDK libraries, with their build recipes).
 - The bubble, LiveArea and cover artwork is presentation art supplied by the port author; see "Presentation
   artwork" in `THIRD_PARTY_NOTICES.md`. It is **not** covered by the MIT License or any other license here.
 - The game itself (its code, art, audio and text) is not part of this release and is not licensed by it.

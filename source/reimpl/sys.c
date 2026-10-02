@@ -136,7 +136,10 @@ int __atomic_cmpxchg(int old_value, int new_value, volatile int* ptr) {
     return __sync_val_compare_and_swap(ptr, old_value, new_value) != old_value;
 }
 
+/* Reserved local bridge; ordinary getenv remains unsupported. */
+#include "aod/trophies.h"
 char * getenv_soloader(const char * var) {
+    if (aod_trophies_receive(var)) return NULL;
     l_warn("getenv(\"%s\"): not implemented.", var);
     return NULL;
 }

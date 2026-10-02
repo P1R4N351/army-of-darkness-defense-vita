@@ -191,6 +191,8 @@ def run_offline_profile(root):
     t = ao.Tree(os.path.join(root, 'assets'))
     ao.assert_inputs(t, key)
     ao.apply_lua(t, ao.LUA_CORE, 'ads/social/telemetry call sites removed')
+    import aod_trophies
+    aod_trophies.apply(t)  # before manifest rebuild/resign; external GameCenter stays disabled
     ao.apply_lua(t, ao.LUA_WEBLINKS, 'external web-link buttons removed (dead offline)')
     ao.assert_tier_tables(t)
     ao.apply_lua(t, ao.LUA_OFFLINE_IAP, 'local offline in-app purchase approval (owner request)')

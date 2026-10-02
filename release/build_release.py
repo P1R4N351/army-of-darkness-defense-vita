@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Assemble the release files from a committed source tree and an already built, tested VPK.
+"""Assemble the release files from a committed source tree and an already built VPK (runtime validation is described in the release notes).
 
     build_release.py --repo SRC --vpk TESTED.vpk --expect-eboot SHA256 --cover COVER.png --out DIR
 
 Writes, deterministically (fixed timestamps, sorted entries):
   DIR/public/aod_vita.vpk                 byte-identical copy of TESTED.vpk (its eboot hash is checked)
-  DIR/public/aodd-prepare-kit-1.0.zip     prepare_data.py + offline profile + expected hashes + tests
-  DIR/public/aod-vita-1.0-source.tar.gz   clean source snapshot: HEAD + submodules, no git history
-  DIR/public/aod-vita-1.0-dependency-sources.tar.gz   exact sources of the linked VitaSDK libraries
+  DIR/public/aodd-prepare-kit-1.1.zip     prepare_data.py + offline profile + expected hashes + tests
+  DIR/public/aod-vita-1.1-source.tar.gz   clean source snapshot: HEAD + submodules, no git history
+  DIR/public/aod-vita-1.1-dependency-sources.tar.gz   exact sources of the linked VitaSDK libraries
   DIR/public/README.md, CHANGELOG.md, LICENSE.txt, THIRD_PARTY_NOTICES.md, LICENSES/, cover.png
   DIR/public/SHA256SUMS
-  DIR/clean-repo/                         one-commit repository of the snapshot (author PiSCES), tag v1.0.0
+  DIR/clean-repo/                         one-commit repository of the snapshot (author PiSCES), tag v1.1.0
 Nothing is uploaded or pushed. DIR must not exist.
 """
 import argparse
@@ -26,13 +26,13 @@ import tarfile
 import zipfile
 import zlib
 
-VERSION = '1.0'
-TAG = 'v1.0.0'
+VERSION = '1.1'
+TAG = 'v1.1.1'
 AUTHOR = 'PiSCES'
 AUTHOR_EMAIL = 'piranesi.ai@outlook.com'
 COVER_SHA256 = '621762b2f19646719e4a78b2e03f80ed99bd6303ba39c1b43c326303e39c91c7'
 SNAPSHOT_EXCLUDE = ('lib/vitagl/samples/',)       # upstream demo media, not part of the build
-KIT_DIRS = ('release/offline/', 'release/expected/', 'release/tests/')
+KIT_DIRS = ('release/offline/', 'release/expected/', 'release/tests/', 'release/trophies/')
 KIT_FILES = ('release/prepare_data.py',)
 PUBLIC_DOCS = (('README.md', 'README.md'), ('CHANGELOG.md', 'CHANGELOG.md'), ('LICENSE', 'LICENSE.txt'),
                ('THIRD_PARTY_NOTICES.md', 'THIRD_PARTY_NOTICES.md'))
@@ -130,6 +130,8 @@ Contents:
   offline/                   the port's offline profile: script/config edits applied to your copy,
                              original replacement scripts (patches/lua), documentation, provenance hashes
   expected/                  sha256 lists: the 1.1.1 files it needs, and the expected result
+  trophies/                  clean homebrew trophy pack generator, frozen mapping and metadata
+  LICENSES/                  license for the adapted trophy pack writer
   tests/                     self-tests: AODD_APK=your.apk python3 -m unittest discover -s tests -v
   LICENSE.txt                MIT (this kit is part of the port's source)
 
@@ -146,6 +148,10 @@ def build_kit(members, dest):
         die('prepare_data.py missing from the kit')
     lic = [d for p, _, d in members if p == 'LICENSE'][0]
     entries += [('README.txt', KIT_README.encode(), False), ('LICENSE.txt', lic, False)]
+    trophy_licenses = [(p, d, False) for p, _, d in members if p == 'LICENSES/GoldenBalloon-MIT.txt']
+    if not trophy_licenses:
+        die('Golden Balloon trophy pack writer license missing from the kit')
+    entries += trophy_licenses
     write_zip(entries, dest)
     return len(entries)
 
@@ -177,7 +183,7 @@ def check_vpk(vpk, expect_eboot):
             die('VPK CRC error')
         eboot = z.read('eboot.bin')
         if sha256(eboot) != expect_eboot:
-            die('VPK eboot.bin is not the tested build %s' % expect_eboot)
+            die('VPK eboot.bin is not the expected build %s' % expect_eboot)
         payload, streams = self_payload(eboot)
         hits = sorted(set(m.group(0)[:80] for m in PRIVATE_TEXT.finditer(payload + eboot)))
         print('eboot: %d compressed segment(s), %d bytes decompressed; private-pattern hits: %d'

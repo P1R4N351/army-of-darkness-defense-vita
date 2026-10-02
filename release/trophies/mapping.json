@@ -1,0 +1,215 @@
+{
+  "schema": 1,
+  "title_id": "AODD00001",
+  "communication_id": "AODD00001",
+  "trophies": [
+    {
+      "id": 0,
+      "key": "ach_archers_at_the_ready"
+    },
+    {
+      "id": 1,
+      "key": "ach_avaricious"
+    },
+    {
+      "id": 2,
+      "key": "ach_bend_my_bow"
+    },
+    {
+      "id": 3,
+      "key": "ach_bone_crusher"
+    },
+    {
+      "id": 4,
+      "key": "ach_bone_saw"
+    },
+    {
+      "id": 5,
+      "key": "ach_brute_force"
+    },
+    {
+      "id": 6,
+      "key": "ach_build_better_foot_soldier"
+    },
+    {
+      "id": 7,
+      "key": "ach_burn_baby"
+    },
+    {
+      "id": 8,
+      "key": "ach_cavalry"
+    },
+    {
+      "id": 9,
+      "key": "ach_defend_the_castle"
+    },
+    {
+      "id": 10,
+      "key": "ach_definitely_n_word"
+    },
+    {
+      "id": 11,
+      "key": "ach_equestrian_elite"
+    },
+    {
+      "id": 12,
+      "key": "ach_every_last_syllable"
+    },
+    {
+      "id": 13,
+      "key": "ach_faithful_reenactment"
+    },
+    {
+      "id": 14,
+      "key": "ach_gonna_be_a_long_night"
+    },
+    {
+      "id": 15,
+      "key": "ach_ground_defense"
+    },
+    {
+      "id": 16,
+      "key": "ach_he_who_is_prophesized"
+    },
+    {
+      "id": 17,
+      "key": "ach_hello_21st_centry"
+    },
+    {
+      "id": 18,
+      "key": "ach_hoarder"
+    },
+    {
+      "id": 19,
+      "key": "ach_honey_you_got_ugly"
+    },
+    {
+      "id": 20,
+      "key": "ach_iron_constitution"
+    },
+    {
+      "id": 21,
+      "key": "ach_isnt_the_pit_wonderful"
+    },
+    {
+      "id": 22,
+      "key": "ach_it_goes_to_eleven"
+    },
+    {
+      "id": 23,
+      "key": "ach_its_a_miracle"
+    },
+    {
+      "id": 24,
+      "key": "ach_king_of_this_land"
+    },
+    {
+      "id": 25,
+      "key": "ach_last_defense"
+    },
+    {
+      "id": 26,
+      "key": "ach_like_a_brick_house"
+    },
+    {
+      "id": 27,
+      "key": "ach_london_bridge_falling_down"
+    },
+    {
+      "id": 28,
+      "key": "ach_lord_of_the_northlands"
+    },
+    {
+      "id": 29,
+      "key": "ach_materialistic"
+    },
+    {
+      "id": 30,
+      "key": "ach_monster_basher"
+    },
+    {
+      "id": 31,
+      "key": "ach_oh_the_irony"
+    },
+    {
+      "id": 32,
+      "key": "ach_one_man_show"
+    },
+    {
+      "id": 33,
+      "key": "ach_plenty_for_everybody"
+    },
+    {
+      "id": 34,
+      "key": "ach_poor_mans_army"
+    },
+    {
+      "id": 35,
+      "key": "ach_protect_the_book"
+    },
+    {
+      "id": 36,
+      "key": "ach_rain_of_death"
+    },
+    {
+      "id": 37,
+      "key": "ach_rain_on_my_parade"
+    },
+    {
+      "id": 38,
+      "key": "ach_rock_and_roll"
+    },
+    {
+      "id": 39,
+      "key": "ach_self_destruction"
+    },
+    {
+      "id": 40,
+      "key": "ach_shop_smart"
+    },
+    {
+      "id": 41,
+      "key": "ach_skull_crusher"
+    },
+    {
+      "id": 42,
+      "key": "ach_spinach_chin"
+    },
+    {
+      "id": 43,
+      "key": "ach_stabby_stabby_ftw"
+    },
+    {
+      "id": 44,
+      "key": "ach_stay_with_the_book"
+    },
+    {
+      "id": 45,
+      "key": "ach_sword_boy"
+    },
+    {
+      "id": 46,
+      "key": "ach_tank_n_spank"
+    },
+    {
+      "id": 47,
+      "key": "ach_this_is_my_bookstick"
+    },
+    {
+      "id": 48,
+      "key": "ach_walls_of_doom"
+    },
+    {
+      "id": 49,
+      "key": "ach_whos_with_me"
+    },
+    {
+      "id": 50,
+      "key": "ach_wrong_book"
+    },
+    {
+      "id": 51,
+      "key": "ach_you_have_my_shteel"
+    }
+  ]
+}
