@@ -27,7 +27,7 @@ import zipfile
 import zlib
 
 VERSION = '1.1'
-TAG = 'v1.1.1'
+TAG = 'v1.1.0'
 AUTHOR = 'PiSCES'
 AUTHOR_EMAIL = 'piranesi.ai@outlook.com'
 COVER_SHA256 = '621762b2f19646719e4a78b2e03f80ed99bd6303ba39c1b43c326303e39c91c7'
