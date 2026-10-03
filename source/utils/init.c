@@ -20,7 +20,6 @@
 #include <string.h>
 
 #include <psp2/appmgr.h>
-#include <psp2/apputil.h>
 #include <psp2/kernel/clib.h>
 #include <psp2/power.h>
 
@@ -52,18 +51,6 @@ static void load_module(so_module *mod, const char *path, uintptr_t addr) {
 }
 
 void soloader_init_all() {
-	// Launch `app0:configurator.bin` on `-config` init param
-    sceAppUtilInit(&(SceAppUtilInitParam){}, &(SceAppUtilBootParam){});
-    SceAppUtilAppEventParam eventParam;
-    sceClibMemset(&eventParam, 0, sizeof(SceAppUtilAppEventParam));
-    sceAppUtilReceiveAppEvent(&eventParam);
-    if (eventParam.type == 0x05) {
-        char buffer[2048];
-        sceAppUtilAppEventParseLiveArea(&eventParam, buffer);
-        if (strstr(buffer, "-config"))
-            sceAppMgrLoadExec("app0:/configurator.bin", NULL, NULL);
-    }
-
     // Set default overclock values
     scePowerSetArmClockFrequency(444);
     scePowerSetBusClockFrequency(222);

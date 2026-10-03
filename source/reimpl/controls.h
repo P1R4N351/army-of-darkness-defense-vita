@@ -14,6 +14,9 @@
 #define SOLOADER_CONTROLS_H
 
 #include <stdint.h>
+#include <stdbool.h>
+#include "aod/input.h"
+#include "aod/input_config.h"
 
 #define LEFT_ANALOG_DEADZONE  0.16f
 #define RIGHT_ANALOG_DEADZONE 0.16f
@@ -59,5 +62,11 @@ typedef struct {
 
 void controls_init();
 void controls_poll();
+
+bool controls_configure(aod_input_mode mode, float width, float height, aod_emit_fn emit, void *userdata);
+bool controls_poll_checked(void);
+bool controls_cancel(void);
+void controls_set_active(bool flag);
+bool controls_pointer(float *out_x, float *out_y);
 
 #endif // SOLOADER_CONTROLS_H

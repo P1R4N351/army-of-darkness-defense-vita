@@ -8,4 +8,12 @@
 	<gate>
 		<startup-image>startup.png</startup-image>
 	</gate>
+
+	<!-- Settings: opens the standalone input configurator -->
+	<frame id="frame3">
+		<liveitem>
+			<target>psla:-config</target>
+			<background valign="bottom" align="center">input-settings.png</background>
+		</liveitem>
+	</frame>
 </livearea>

@@ -113,6 +113,12 @@ set(SOURCES
     source/aod/port_vita.c
     source/aod/text_render.c
     source/aod/touch_ids.c
+    source/aod/input.c
+    source/aod/input_vita.c
+    source/aod/input_overlay.c
+    source/aod/input_config.c
+    source/aod/input_queue.c
+    source/aod/input_launch.c
     source/aod/uniform_remap.c
     source/aod/uniform_remap_vita.c
     source/aod/gl_diag.c
@@ -157,6 +163,11 @@ list(APPEND SOURCES
 endif()
 
 set_source_files_properties(source/aod/trophies.c PROPERTIES COMPILE_OPTIONS "-fno-fast-math")
+set_source_files_properties(source/aod/input.c PROPERTIES COMPILE_OPTIONS "-fno-fast-math")
+set_source_files_properties(source/aod/input_vita.c PROPERTIES COMPILE_OPTIONS "-fno-fast-math")
+set_source_files_properties(source/aod/input_overlay.c PROPERTIES COMPILE_OPTIONS "-fno-fast-math")
+set_source_files_properties(source/aod/input_queue.c PROPERTIES COMPILE_OPTIONS "-fno-fast-math")
+set_source_files_properties(source/aod/configurator.c PROPERTIES COMPILE_OPTIONS "-fno-fast-math")
 add_executable(${CMAKE_PROJECT_NAME} ${SOURCES})
 
 add_subdirectory(lib/libc_bridge)
@@ -204,6 +215,41 @@ set_target_properties(vitaGL PROPERTIES
                       IMPORTED_LOCATION ${VITAGL_LIB}
                       INTERFACE_INCLUDE_DIRECTORIES ${VITAGL_DIR}/source)
 add_dependencies(${CMAKE_PROJECT_NAME} vitaGL_build)
+
+# Standalone input configurator binary (no SO loader, no JNI, no SceLibcBridge).
+add_executable(aod_configurator
+               source/aod/configurator.c
+               source/aod/input_config.c
+               source/aod/viewport_softfp.c)
+target_include_directories(aod_configurator
+                           PUBLIC ${CMAKE_SOURCE_DIR}/source
+                           ${VITAGL_DIR}/source)
+add_dependencies(aod_configurator vitaGL_build)
+target_link_options(aod_configurator PRIVATE
+    -Wl,--defsym,__sce_headroom=0x4000
+    -Wl,--wrap=sceGxmSetViewport_sfp)
+target_link_libraries(aod_configurator
+                      png
+                      z
+                      m
+                      -Wl,--whole-archive pthread -Wl,--no-whole-archive
+                      vitaGL
+                      vitashark
+                      SceShaccCgExt
+                      taihen_stub
+                      mathneon
+                      SceAppMgr_stub
+                      SceCtrl_stub
+                      SceTouch_stub
+                      SceCommonDialog_stub
+                      SceDisplay_stub
+                      SceKernelDmacMgr_stub
+                      SceGxm_stub
+                      SceShaccCg_stub
+                      SceSysmodule_stub
+                      SceVshBridge_stub
+                      stdc++
+                      m)
 
 target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
                            PUBLIC ${CMAKE_SOURCE_DIR}/lib
@@ -289,6 +335,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
                       )
 
 vita_create_self(eboot.bin ${CMAKE_PROJECT_NAME} UNSAFE NOASLR)
+vita_create_self(configurator.bin aod_configurator UNSAFE NOASLR)
 # Clean original metadata/art; generated locally, not publisher assets.
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 set(AOD_TROPHY_PACK "${CMAKE_BINARY_DIR}/trophy/AODD00001_00/TROPHY.TRP")
@@ -302,6 +349,7 @@ vita_create_vpk(${VITA_VPKNAME}.vpk ${VITA_TITLEID} eboot.bin
                 VERSION ${VITA_VERSION}
                 NAME ${VITA_APP_NAME}
                 FILE ${AOD_TROPHY_PACK} sce_sys/trophy/AODD00001_00/TROPHY.TRP
+                ${CMAKE_BINARY_DIR}/configurator.bin configurator.bin
                 ${CMAKE_SOURCE_DIR}/extras/cpuinfo cpuinfo
                 ${CMAKE_SOURCE_DIR}/extras/meminfo meminfo
                 ${CMAKE_SOURCE_DIR}/extras/urandom urandom
@@ -310,7 +358,15 @@ vita_create_vpk(${VITA_VPKNAME}.vpk ${VITA_TITLEID} eboot.bin
                 ${CMAKE_SOURCE_DIR}/extras/livearea/startup.png sce_sys/livearea/contents/startup.png
                 ${CMAKE_SOURCE_DIR}/extras/livearea/bg0.png sce_sys/livearea/contents/bg0.png
                 ${CMAKE_SOURCE_DIR}/extras/livearea/template.xml sce_sys/livearea/contents/template.xml
+                ${CMAKE_SOURCE_DIR}/extras/livearea/input-settings.png sce_sys/livearea/contents/input-settings.png
+                ${CMAKE_SOURCE_DIR}/extras/livearea/input-settings-screen.png sce_sys/livearea/contents/input-settings-screen.png
                 )
+# Ensure the configurator SELF is built before the VPK reads configurator.bin.
+if(${CMAKE_VERSION} VERSION_LESS "3.20.0")
+  add_dependencies(${VITA_VPKNAME}.vpk configurator.bin)
+else()
+  add_dependencies(${VITA_VPKNAME}.vpk-vpk configurator.bin-self)
+endif()
 
 add_custom_target(send
                   COMMAND echo destroy | nc ${PSVITAIP} 1338

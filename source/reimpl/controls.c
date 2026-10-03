@@ -12,10 +12,15 @@
 #include <psp2/motion.h>
 #include <psp2/touch.h>
 #include <psp2/kernel/clib.h>
+#include <stdbool.h>
+#include "aod/input_vita.h"
 
 #define LEFT_ANALOG_DEADZONE  0.16f
 #define RIGHT_ANALOG_DEADZONE 0.16f
 
+static aod_input_vita owner;
+static bool configured = false;
+static bool active = true;
 
 void coord_normalize(float * x, float * y, float deadzone) {
     float magnitude = sqrtf((*x * *x) + (*y * *y));
@@ -35,12 +40,12 @@ void coord_normalize(float * x, float * y, float deadzone) {
 }
 
 void controls_init() {
-    // Enable analog sticks and touchscreen
-    sceCtrlSetSamplingModeExt(SCE_CTRL_MODE_ANALOG_WIDE);
-    sceTouchSetSamplingState(SCE_TOUCH_PORT_FRONT, 1);
-
-    // Enable accelerometer
-    sceMotionStartSampling();
+    configured = false;
+    active = true;
+    int rc = sceMotionStartSampling();
+    if (rc < 0) {
+        sceClibPrintf("controls_init: sceMotionStartSampling failed: 0x%08x\n", rc);
+    }
 }
 
 void poll_touch();
@@ -50,9 +55,8 @@ void poll_accel();
 void poll_stick(ControlsStickId which, float raw_x, float raw_y, float * readings_x, float * readings_y, float deadzone);
 
 void controls_poll() {
-    poll_touch();
-    poll_pad();
-    //poll_accel();
+    /* Intentionally cast: poll_checked returns bool; rejection retained pending retry. */
+    (void)controls_poll_checked();
 }
 
 SceTouchData touch;
@@ -182,4 +186,25 @@ void poll_stick(ControlsStickId which, float raw_x, float raw_y, float * reading
     readings_y[2] = readings_y[1];
     readings_x[1] = readings_x[0];
     readings_y[1] = readings_y[0];
+}
+
+bool controls_configure(aod_input_mode mode, float width, float height, aod_emit_fn emit, void *userdata) {
+    configured = aod_input_vita_init(&owner, mode, width, height, emit, userdata);
+    return configured;
+}
+
+bool controls_poll_checked(void) {
+    return configured && aod_input_vita_poll(&owner, active);
+}
+
+bool controls_cancel(void) {
+    return aod_input_vita_cancel(&owner);
+}
+
+void controls_set_active(bool flag) {
+    active = flag;
+}
+
+bool controls_pointer(float *out_x, float *out_y) {
+    return aod_input_vita_pointer(&owner, out_x, out_y);
 }

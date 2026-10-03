@@ -24,6 +24,14 @@
 #include "aod/opensl_compat.h"
 #include "reimpl/controls.h"
 
+#include "aod/input_queue.h"
+#include "aod/input_launch.h"
+#include "aod/input_config.h"
+#include "aod/input_overlay.h"
+#include "aod/input.h"
+
+#include <psp2/appmgr.h>
+#include <psp2/kernel/clib.h>
 #include <psp2/kernel/processmgr.h>
 #include <psp2/kernel/threadmgr.h>
 
@@ -33,6 +41,7 @@
 
 #include <pthread.h>
 #include <string.h>
+
 
 int _newlib_heap_size_user = 256 * 1024 * 1024;
 
@@ -51,34 +60,37 @@ void aod_alert_poll(void);
 #define SCREEN_H 544
 
 /* Java BFSEngine event queue: filled by input polling, drained after nativeUpdate(). */
-typedef struct { int kind; int type, id; float x, y; int64_t t; } input_event;
-enum { EV_TOUCH, EV_KEY, EV_WINDOW };
-#define MAX_EVENTS 256
-static input_event events[MAX_EVENTS];
-static int n_events;
+static aod_input_queue queue;
 
 static int64_t uptime_ms(void) { return (int64_t)(sceKernelGetProcessTimeWide() / 1000); }
 
-static void push_event(input_event e) {
-	if (n_events < MAX_EVENTS) events[n_events++] = e;
+static bool emit_cb(void *userdata, const aod_event *event) {
+    aod_input_queue *q = (aod_input_queue *)userdata;
+    return aod_input_queue_emit(q, event, uptime_ms());
 }
 
 /* Android KeyEvent -> BFSEngine: KEYCODE_BACK(4) -> 0, KEYCODE_MENU(82) -> 1. */
 void controls_handler_key(int32_t keycode, ControlsAction action) {
-	int code;
-	if (keycode == AKEYCODE_BUTTON_B || keycode == AKEYCODE_BUTTON_SELECT) code = 0;        /* Circle/Select = Back */
-	else if (keycode == AKEYCODE_BUTTON_START) code = 1;                                    /* Start = Menu */
-	else return;
-	if (action == CONTROLS_ACTION_MOVE) return;
-	push_event((input_event){ EV_KEY, action == CONTROLS_ACTION_DOWN ? 0 : 1, code, 0, 0, uptime_ms() });
+    if (action == CONTROLS_ACTION_MOVE) return;
+    int id;
+    if (keycode == AKEYCODE_BUTTON_B || keycode == AKEYCODE_BUTTON_SELECT) id = 0;  /* Circle/Select = Back */
+    else if (keycode == AKEYCODE_BUTTON_START) id = 1;                              /* Start = Menu */
+    else return;
+    int type = (action == CONTROLS_ACTION_DOWN) ? 0 : 1;
+    aod_input_event ev = { AOD_KIND_KEY, type, id, 0.0f, 0.0f, uptime_ms() };
+    bool ok = aod_input_queue_push(&queue, &ev);
+    (void)ok; /* void compat only; actual adapter uses bool callback; rejection noted */
 }
 
 /* MotionEvent: 0 Down, 1 Move, 2 Up. Coordinates are surface pixels. */
 void controls_handler_touch(int32_t id, float x, float y, ControlsAction action) {
-	int type = action == CONTROLS_ACTION_DOWN ? 0 : action == CONTROLS_ACTION_UP ? 2 : 1;
-	int pointer = aod_touch_map(id, type);
-	if (pointer < 0) return;
-	push_event((input_event){ EV_TOUCH, type, pointer, x, y, uptime_ms() });
+    int atype;
+    if (action == CONTROLS_ACTION_DOWN) atype = AOD_TOUCH_DOWN;
+    else if (action == CONTROLS_ACTION_UP) atype = AOD_TOUCH_UP;
+    else if (action == CONTROLS_ACTION_MOVE) atype = AOD_TOUCH_MOVE;
+    else return;
+    bool ok = aod_input_queue_touch(&queue, (int)id, atype, x, y, uptime_ms());
+    (void)ok;
 }
 
 void controls_handler_analog(ControlsStickId which, float x, float y, ControlsAction action) {}
@@ -123,12 +135,35 @@ int _opensles_user_freq = 0;
 void SDL_open(void *sdk_engine);
 
 int main(void) {
+    /* Cold startup: launch settings check before any game assets or SDK init. */
+    {
+        int li_rc = aod_input_launch_init();
+        if (li_rc != 0) l_info("input_launch_init: rc=%d", li_rc);
+        int lp_rc = aod_input_launch_poll();
+        if (lp_rc == 1) { sceKernelExitProcess(0); return 0; }
+        if (lp_rc == -1) { sceKernelExitProcess(1); return 1; }
+    }
 	aod_audiodiag_install_stderr();   /* libOpenSLES reports its errors only on stderr */
 	/* FMOD dlsym()s slCreateEngine during nativeCreate; the port's proxy needs the SDK entry point and
 	 * the SDK's interface-ID values (not the addresses dynlib exports for FMOD to dereference). */
 	aod_opensl_set_backend(slCreateEngine, SL_IID_ENGINE, SL_IID_ANDROIDCONFIGURATION);
 	aod_opensl_set_output_hooks(SDL_open, &_opensles_user_freq);   /* output rate follows FMOD's player (boot-12) */
 	soloader_init_all();
+    /* Initialize input queue and load config; controls_init already called by soloader_init_all. */
+    aod_input_queue_init(&queue);
+    {
+        aod_input_mode cfg_mode = AOD_INPUT_SHOULDERS;
+        int cfg_rc = aod_input_config_load("ux0:data/aodd/input-controls.cfg", &cfg_mode);
+        if (cfg_rc == 1) {
+            cfg_mode = AOD_INPUT_SHOULDERS; /* missing: default Shoulders */
+        } else if (cfg_rc == -1) {
+            /* corrupt/error: retain default, l_info diagnostic, no file writes */
+            l_info("input_config_load: corrupt or error, retaining default mode %d", (int)cfg_mode);
+            cfg_mode = AOD_INPUT_SHOULDERS;
+        }
+        bool cc = controls_configure(cfg_mode, (float)SCREEN_W, (float)SCREEN_H, emit_cb, &queue);
+        if (!cc) l_info("controls_configure: failed; controls unavailable this session");
+    }
 	aod_jni_install();
 
 	native_v nativeStart = need(NB "nativeStart");
@@ -163,7 +198,11 @@ int main(void) {
 	if (aod_gldiag_enabled())
 		gldiag_preflight(AOD_DIAG_PREFLIGHT_P2);   /* opt-in DIAGNOSTIC E9: GL clear after the game's GL init */
 	/* Activity.onWindowFocusChanged(true) is queued before the first frame. */
-	push_event((input_event){ EV_WINDOW, 1, 0, 0, 0, 0 });
+    {
+        aod_input_event wev = { AOD_KIND_WINDOW, 1, 0, 0.0f, 0.0f, 0 };
+        bool wq = aod_input_queue_push(&queue, &wev);
+        (void)wq;
+    }
 	l_info("lifecycle: entering frame loop");
 
 	/* Bounded frame diagnostics (boot-03 showed "first frame presented" then silence): the first
@@ -172,20 +211,58 @@ int main(void) {
 	while (!aod_exit_requested) {
 		int trace = frame < 3;
 		aod_gldiag_frame_begin(frame);   /* DIAGNOSTIC build */
-		controls_poll();
+        /* Per-frame: bounded one settings launch event (no substring). */
+        {
+            int lp = aod_input_launch_poll();
+            if (lp == 1 || lp == -1) {
+                int exit_status = (lp == 1) ? 0 : 1;
+                bool cc = controls_cancel(); (void)cc;
+                /* LoadExec on lp==1 normally does not return; terminate if returned. */
+                sceKernelExitProcess(exit_status);
+                return exit_status;
+            }
+        }
+        /* Focus / resume: poll SDK once per frame; ON_RESUME flags inactive this frame. */
+        {
+            SceAppMgrSystemEvent sys_ev;
+            sceClibMemset(&sys_ev, 0, sizeof(sys_ev));
+            bool this_frame_inactive = false;
+            int sys_rc = sceAppMgrReceiveSystemEvent(&sys_ev);
+            if (sys_rc == 0 && sys_ev.systemEvent == SCE_APPMGR_SYSTEMEVENT_ON_RESUME) {
+                this_frame_inactive = true;
+                bool cc = controls_cancel(); (void)cc;
+            }
+            bool want_active = !this_frame_inactive && !aod_alert_active();
+            controls_set_active(want_active);
+        }
+        {
+            bool poll_ok = controls_poll_checked();
+            (void)poll_ok; /* rejection retained pending retry */
+        }
 		if (trace) l_info("frame %lu: nativeUpdate begin", frame);
 		nativeUpdate(&jni, bridge);
 		if (trace) l_info("frame %lu: nativeUpdate end", frame);
-		for (int i = 0; i < n_events; i++) {
-			input_event *e = &events[i];
-			if (e->kind == EV_TOUCH) nativeOnTouchEvent(&jni, bridge, e->type, e->id, e->x, e->y, e->t);
-			else if (e->kind == EV_KEY) nativeOnKeyEvent(&jni, bridge, e->type, e->id, e->t);
-			else nativeOnWindowEvent(&jni, bridge, e->type ? JNI_TRUE : JNI_FALSE);
-		}
-		n_events = 0;
+        {
+            unsigned ev_count = aod_input_queue_count(&queue);
+            for (unsigned i = 0; i < ev_count; i++) {
+                const aod_input_event *e = aod_input_queue_at(&queue, i);
+                if (!e) break;
+                if (e->kind == AOD_KIND_TOUCH) nativeOnTouchEvent(&jni, bridge, e->type, e->id, e->x, e->y, e->t);
+                else if (e->kind == AOD_KIND_KEY) nativeOnKeyEvent(&jni, bridge, e->type, e->id, e->t);
+                else if (e->kind == AOD_KIND_WINDOW) nativeOnWindowEvent(&jni, bridge, e->type ? JNI_TRUE : JNI_FALSE);
+            }
+            aod_input_queue_clear(&queue);
+        }
 		aod_jni_run_deferred();
 		aod_alert_poll();
 		if (trace) l_info("frame %lu: swap begin", frame);
+        if (!aod_alert_active()) {
+            float ptr_x = 0.0f, ptr_y = 0.0f;
+            if (controls_pointer(&ptr_x, &ptr_y)) {
+                bool od = aod_input_overlay_draw((float)SCREEN_W, (float)SCREEN_H, ptr_x, ptr_y);
+                (void)od;
+            }
+        }
 		aod_gldiag_before_swap(frame);   /* DIAGNOSTIC: tags the display-queue entry this swap creates */
 		vglSwapBuffers(aod_alert_active() ? GL_TRUE : GL_FALSE);
 		if (trace) l_info("frame %lu: swap end", frame);
